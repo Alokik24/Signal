@@ -1,13 +1,13 @@
 # Setup
 
-Signal is developed Linux-first. Windows + Docker Desktop is a secondary validation target. The project is being built incrementally; this document records only dependencies that are real at the current implementation stage.
+Signal is developed Linux-first. Windows + Docker Desktop is a secondary validation target. This document records only dependencies that are real at the current implementation stage.
 
 ## Phase 1 prerequisites
 
 - Git
-- Python 3.12 or 3.13
+- Python 3.12
 
-Docker is part of the planned reproducible runtime, but it is **not required for Phase 1** because no containerized service exists yet.
+Docker is planned for later runtime components and is **not required for Phase 1**.
 
 ## Fresh Linux setup
 
@@ -18,34 +18,41 @@ git clone https://github.com/Alokik24/Signal.git
 cd Signal
 ```
 
-Create and activate a virtual environment:
+Create and activate a clean virtual environment:
 
 ```bash
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 ```
 
-Install the project and development dependencies:
+If Debian/Ubuntu reports that `ensurepip` is unavailable, install the matching venv package first:
 
 ```bash
-python -m pip install --upgrade pip
-pip install -e ".[dev]"
+sudo apt install python3.12-venv
 ```
+
+Install the pinned project dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Do not install the project's dependencies globally.
 
 ## Validate the Phase 1 foundation
 
-Run formatting, linting, and tests:
+Run formatting, linting, and tests through the active Python interpreter:
 
 ```bash
-ruff format --check .
-ruff check .
-pytest
+python -m ruff format --check .
+python -m ruff check .
+python -m pytest
 ```
 
-Start the API:
+Start the API from the repository root:
 
 ```bash
-uvicorn signal.main:app --reload
+python -m uvicorn src.signal.main:app --reload
 ```
 
 In another terminal, verify the health endpoint:
@@ -60,7 +67,7 @@ Expected response:
 {"status":"ok"}
 ```
 
-The interactive API documentation is available at:
+Interactive API documentation:
 
 ```text
 http://127.0.0.1:8000/docs
@@ -73,19 +80,23 @@ For a meaningful setup test, remove the virtual environment and recreate it from
 ```bash
 deactivate
 rm -rf .venv
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
-ruff format --check .
-ruff check .
-pytest
+python -m pip install -r requirements.txt
+python -m ruff format --check .
+python -m ruff check .
+python -m pytest
 ```
 
-This verifies that the project does not accidentally depend on globally installed Python packages.
+This verifies that Signal does not accidentally depend on globally installed packages.
+
+## Dependency policy
+
+`requirements.txt` contains the pinned direct runtime and development/test requirements used by Signal at this stage. Update it deliberately when a dependency changes. Do not add packages merely to create a capability or keyword; use the Phase 0 capability register and build-vs-integrate rule.
 
 ## CI
 
-GitHub Actions runs the same basic formatting, linting, and test checks. A local pass and a CI pass are both expected before considering the Phase 1 foundation validated.
+GitHub Actions installs the same `requirements.txt` and runs the same formatting, linting, and test checks. A local pass and a CI pass are both expected before considering the Phase 1 foundation validated.
 
 ## Later phases
 
