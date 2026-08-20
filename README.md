@@ -4,7 +4,7 @@
 
 ## Phase 0 status
 
-Architecture and scope are frozen in `docs/SDD.md`. The capability register in `docs/CAPABILITY-REGISTER.md` is the authority for build-vs-integrate decisions.
+SIG-000 through SIG-003 are frozen in the Phase 0 baseline. The full system design is in `docs/SDD.md`; `docs/CAPABILITY-REGISTER.md` maps every AI capability Signal deliberately covers, defers, limits, or excludes.
 
 ## Core boundary
 
@@ -14,7 +14,7 @@ The probabilistic layer (LLM) interprets, plans, routes and explains. Determinis
 
 Human problem → problem framing → hypotheses → data requirements → dataset inspection → investigation plan → human approval → bounded tool use → evidence validation → findings → prescription.
 
-Text is the primary input. Audio is an optional input path through Faster-Whisper. Historical retrieval, pgvector, and n8n automation are conditional capabilities and are not allowed to expand the core product without a demonstrated requirement.
+Text is the primary input. Audio is optional through Faster-Whisper. RAG, embeddings, vector search and n8n are conditional/limited capabilities governed by the capability register rather than added for keywords.
 
 ## Cost target
 
