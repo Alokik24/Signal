@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from signal.config import get_settings
+from src.signal.config import get_settings
 
 settings = get_settings()
 

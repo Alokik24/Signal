@@ -1,7 +1,6 @@
 from fastapi.testclient import TestClient
 
-from signal.main import app
-
+from src.signal.main import app
 
 client = TestClient(app)
 
