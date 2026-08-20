@@ -6,22 +6,22 @@ This register is the Phase 0 authority for what Signal demonstrates, how each ca
 
 | AI capability | Signal coverage | Implementation boundary | Decision |
 |---|---|---|---|
-| LLM inference | Problem framing, hypotheses, planning, interpretation, prescription | Provider abstraction; local model first; external APIs optional | **Use** |
-| Prompting | Structured prompts for each workflow state | Keep prompts small, versioned, and tied to schemas | **Use** |
-| Structured outputs | Typed framing, plans, tool calls, findings | Pydantic/schema validation at every LLM boundary | **Use** |
-| Tool calling | Model selects registered analytical tools | Allow-listed tools only; no arbitrary shell or SQL writes | **Use** |
+| LLM inference | Problem framing, hypotheses, transformation proposals, planning, interpretation, prescription | Provider abstraction; local model first; external APIs optional | **Use** |
+| Prompting | Small structured prompts for each workflow state | Versioned prompts tied to schemas; no giant universal prompt | **Use** |
+| Structured outputs | Framing, hypotheses, data-quality interpretation, transformation proposals, plans, tool calls, findings | Pydantic/schema validation at every LLM boundary | **Use** |
+| Tool calling | Model selects registered data/analysis tools | Allow-listed tools only; no arbitrary shell or SQL writes | **Use** |
 | Agentic workflow | Bounded stateful investigation loop | LangGraph handles state/routing/checkpoints; no custom agent framework | **Use** |
-| Planning | Investigation plan from problem + available data | LLM proposes; human approves before execution | **Use** |
-| Human-in-the-loop | Plan approval/rejection/edit | LangGraph interrupt/checkpoint facilities | **Use** |
+| Planning | Investigation plan from problem + available data + readiness state | LLM proposes; human approves before material execution | **Use** |
+| Human-in-the-loop | Transformation and investigation-plan approval | LangGraph interrupt/checkpoint facilities | **Use** |
 | RAG | Historical investigation retrieval | Conditional; only after completed investigations prove retrieval value | **Conditional** |
 | Embeddings | Represent prior investigations for retrieval | Existing local embedding model/provider; no model training | **Conditional** |
 | Vector search | Similar-investigation retrieval | PostgreSQL + pgvector if RAG is justified; no separate vector DB | **Conditional** |
 | Speech-to-text | Audio → transcript → normal problem pipeline | Faster-Whisper; no custom speech engine | **Use** |
-| AI evaluation | Benchmark framing, planning, tool choice, correctness, grounding, prescription | Small manually verified benchmark + repeatable evaluator | **Use** |
-| AI observability | Trace model calls, workflow steps, tools, latency/failures | OpenTelemetry; no custom tracing platform | **Use** |
-| Guardrails | Tool permissions, schema validation, evidence requirements, bounded loops | Application/tool boundaries rather than a separate guardrail product | **Use** |
-| Grounding / provenance | Findings tied to analysis runs and evidence | Evidence objects carry source and analysis references | **Use** |
-| Uncertainty / abstention | Refuse unsupported findings | Evidence sufficiency check and explicit insufficient-evidence state | **Use** |
+| AI evaluation | Benchmark framing, readiness, transformation proposals, planning, tool choice, correctness, grounding, prescription | Small manually verified benchmark + repeatable evaluator | **Use** |
+| AI observability | Trace model calls, workflow steps, tools, latency/failures, data decisions | OpenTelemetry; no custom tracing platform | **Use** |
+| Guardrails | Tool permissions, schema validation, source-data immutability, approval gates, evidence requirements, bounded loops | Application/tool boundaries rather than a separate guardrail product | **Use** |
+| Grounding / provenance | Findings tied to analysis runs, evidence, datasets, and transformations | Evidence objects carry source, transformation, and analysis references | **Use** |
+| Uncertainty / abstention | Refuse unsupported findings or unsuitable data | Readiness/evidence sufficiency states and explicit abstention | **Use** |
 | Local inference | Zero-cost normal runtime | Local provider such as Ollama; exact model deferred until hardware/setup phase | **Use** |
 | Model/provider abstraction | Swap local/external inference without changing workflow | Narrow provider interface | **Use** |
 | Automation workflows | Investigation completion → external action | One n8n webhook workflow; n8n owns automation logic | **Use** |
@@ -31,6 +31,28 @@ This register is the Phase 0 authority for what Signal demonstrates, how each ca
 | Autonomous browser/web agents | None | No browsing requirement in core product | **Excluded** |
 | Custom RAG framework | None | Use existing retrieval primitives if RAG is justified | **Excluded** |
 
+## Data/AI capability boundary
+
+Signal accepts **reasonably raw CSV/Parquet data**. It does not require users to pre-clean every dataset, but it also does not promise general-purpose automated data cleaning.
+
+The supported flow is:
+
+`profile → assess investigation-relevant quality → decide readiness → propose only necessary transformations → obtain approval when material/ambiguous → create temporary analytical view → analyze`
+
+Supported initial quality/repair categories are deliberately narrow:
+
+- schema/type inspection
+- missingness
+- duplicate detection
+- inconsistent categorical values
+- date parsing/format inconsistencies
+- obvious invalid values
+- investigation-required derived fields
+
+The original source data is immutable. Transformations are explicit, traceable, and applied only to derived analytical representations. Signal may stop and ask for clarification when a problem cannot be safely resolved.
+
+This is **not** a general ETL/data-cleaning product.
+
 ## Supporting engineering capabilities
 
 | Capability | Decision | Rationale / boundary |
@@ -38,7 +60,8 @@ This register is the Phase 0 authority for what Signal demonstrates, how each ca
 | HTTP API | FastAPI | Mature API framework; no custom HTTP layer. |
 | Data validation | Pydantic | Typed contracts rather than hand-written validation. |
 | Analytical SQL | DuckDB | Local CSV/Parquet analysis without premature warehouse infrastructure. |
-| Dataframes | Pandas | Mature ecosystem and existing project skill. |
+| Data profiling | Existing dataframe/SQL primitives | Deterministic profiling; no custom profiling engine unless a real gap appears. |
+| Data transformations | Pandas/DuckDB + small allow-list | Investigation-specific derived views; never mutate source data. |
 | Statistical tests | SciPy | Do not implement statistical tests manually. |
 | Visualizations | Matplotlib | Deterministic plotting; no custom charting engine. |
 | Application database | PostgreSQL | Existing skill and sufficient for application/investigation state. |
